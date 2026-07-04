@@ -7,41 +7,41 @@ from flask import Flask
 
 # --- ⚠️ CONFIGURATION ⚠️ ---
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-COMMUNITY_ID = -1003997550617
+COMMUNITY_ID = -1002241567123  # Make sure this is your actual negative group ID
 MY_TON_WALLET = "UQA3n4Lgs0gJRinUW-CFbwOpILhmkUvVT-dsoXKjgMhJiGR-"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-# --- TRANSLATION DICTIONARY (UPDATED WITH TON/GRAM) ---
+# --- TRANSLATION DICTIONARY (UPDATED TO 25 EUR) ---
 LANG_DATA = {
     "en": {
         "name": "English 🇬🇧",
-        "text": "💰 *Monthly Subscription Fee: 50 EUR*\n\n*Your dynamic amount to send right now:* `{ton_amount:.2f}` *Toncoin (TON) / Gram (GRAM)*\n\n*Wallet Address:*\n`{wallet}`\n\n⚠️ *IMPORTANT:* You must copy and paste the code below into the **Comment / Memo** field of your transaction, or the bot cannot track your payment:\n`{comment}`\n\n❌ *WE ONLY ACCEPT TON / GRAM* (Payments in other coins will be lost).\n\nTap the verification button below as soon as your wallet says sent!",
+        "text": "💰 *Monthly Subscription Fee: 25 EUR*\n\n*Your dynamic amount to send right now:* `{ton_amount:.2f}` *Toncoin (TON) / Gram (GRAM)*\n\n*Wallet Address:*\n`{wallet}`\n\n⚠️ *IMPORTANT:* You must copy and paste the code below into the **Comment / Memo** field of your transaction, or the bot cannot track your payment:\n`{comment}`\n\n❌ *WE ONLY ACCEPT TON / GRAM* (Payments in other coins will be lost).\n\nTap the verification button below as soon as your wallet says sent!",
         "verify_btn": "🔄 Verify My Subscription",
         "success": "✅ Subscription Confirmed! Tap this link to join the premium community: {link}",
         "fail": "❌ Active payment not detected. Ensure you sent at least {ton_amount:.2f} Toncoin (TON) / Gram (GRAM) with the exact comment code and try again."
     },
     "sr": {
         "name": "Srpski 🇷🇸",
-        "text": "💰 *Mesečna pretplata: 50 EUR*\n\n*Tačan iznos za slanje sada:* `{ton_amount:.2f}` *Toncoin (TON) / Gram (GRAM)*\n\n*Adresa novčanika:*\n`{wallet}`\n\n⚠️ *VAŽNO:* Morate kopirati i nalepiti kod ispod u polje **Komentar / Memo** prilikom slanja transakcije, u suprotnom bot neće moći da potvrdi uplatu:\n`{comment}`\n\n❌ *PRIHVATAMO SAMO TON / GRAM* (Uplate u drugim valutama će biti trajno izgubljene).\n\nKliknite na dugme ispod čim vaš novčanik prikaže da je poslato!",
+        "text": "💰 *Mesečna pretplata: 25 EUR*\n\n*Tačan iznos za slanje sada:* `{ton_amount:.2f}` *Toncoin (TON) / Gram (GRAM)*\n\n*Adresa novčanika:*\n`{wallet}`\n\n⚠️ *VAŽNO:* Morate kopirati i nalepiti kod ispod u polje **Komentar / Memo** prilikom slanja transakcije, u suprotnom bot neće moći da potvrdi uplatu:\n`{comment}`\n\n❌ *PRIHVATAMO SAMO TON / GRAM* (Uplate u drugim valutama će biti trajno izgubljene).\n\nKliknite na dugme ispod čim vaš novčanik prikaže da je poslato!",
         "verify_btn": "🔄 Potvrdi moju pretplatu",
         "success": "✅ Pretplata potvrđena! Kliknite na ovaj link da se pridružite: {link}",
         "fail": "❌ Aktivna uplata nije pronađena. Proverite da li ste poslali najmanje {ton_amount:.2f} Toncoin (TON) / Gram (GRAM) sa tačnim komentarom i pokušajte ponovo."
     },
     "mk": {
         "name": "Македонски 🇲🇰",
-        "text": "💰 *Месечна претплата: 50 EUR*\n\n*Точен износ за испраќање сега:* `{ton_amount:.2f}` *Toncoin (TON) / Gram (GRAM)*\n\n*Адреса на паричник:*\n`{wallet}`\n\n⚠️ *ВАЖНО:* Мора да го копирате и залепите кодот подолу во полето **Коментар / Memo** при плаќањето, во спротивно ботот нема да ја препознае уплатата:\n`{comment}`\n\n❌ *ПРИФАЌАМЕ ИСКЛУЧИВО TON / GRAM* (Уплатите во други валути ќе бидат трајно изгубени).\n\nПритиснете го копчето подолу штом вашиот паричник покаже дека е испратено!",
+        "text": "💰 *Месечна претплата: 25 EUR*\n\n*Точен износ за испраќање сега:* `{ton_amount:.2f}` *Toncoin (TON) / Gram (GRAM)*\n\n*Адреса на паричник:*\n`{wallet}`\n\n⚠️ *ВАЖНО:* Мора да го копирате и залепите кодот подолу во полето **Коментар / Memo** при плаќањето, во спротивно ботот нема да ја препознае уплатата:\n`{comment}`\n\n❌ *ПРИФАЌАМЕ ИСКЛУЧИВО TON / GRAM* (Уплатите во други валути ќе бидат трајно изгубени).\n\nПритиснете го копчето подолу штом вашиот паричник покаже дека е испратено!",
         "verify_btn": "🔄 Потврди ја мојата претплата",
         "success": "✅ Претплата е потврдена! Кликнете на овој линк за да се приклучите: {link}",
         "fail": "❌ Активна уплата не е пронајдена. Проверете дали сте испратиле најмалку {ton_amount:.2f} Toncoin (TON) / Gram (GRAM) со точниот коментар и обидете се повторно."
     },
     "sq": {
         "name": "Shqip 🇦🇱",
-        "text": "💰 *Abonimi Mujor: 50 EUR*\n\n*Shuma e saktë për të dërguar tani:* `{ton_amount:.2f}` *Toncoin (TON) / Gram (GRAM)*\n\n*Adresa e Portofolit:*\n`{wallet}`\n\n⚠️ *E RËNDËSISHME:* Duhet të kopjoni dhe ngjitni kodin e mëposhtëm në fushën **Comment / Memo** të transaksionit tuaj, përndryshe boti nuk mund ta gjurmojë pagesën:\n`{comment}`\n\n❌ *PRANOJMË VETËM TON / GRAM* (Pagesat në monedha të tjera do të humbasin).\n\nShtypni butonin e mëposhtëm sapo portofoli juaj të thotë u dërgua!",
+        "text": "💰 *Abonimi Mujor: 25 EUR*\n\n*Shuma e saktë për të dërguar tani:* `{ton_amount:.2f}` *Toncoin (TON) / Gram (GRAM)*\n\n*Adresa e Portofolit:*\n`{wallet}`\n\n⚠️ *E RËNDËSISHME:* Duhet të kopjoni dhe ngjitni kodin e mëposhtëm në fushën **Comment / Memo** të transaksionit tuaj, përndryshe boti nuk mund ta gjurmojë pagesën:\n`{comment}`\n\n❌ *PRANOJMË VETËM TON / GRAM* (Pagesat në monedha të tjera do të humbasin).\n\nShtypni butonin e mëposhtëm sapo portofoli juaj të thotë u dërgua!",
         "verify_btn": "🔄 Verifiko Abonimin Tim",
         "success": "✅ Abonimi u konfirmua! Klikoni këtë link për t'u bashkuar: {link}",
-        "fail": "❌ Abonimi aktiv nuk u gjet. Sigurohuni qe keni dërguar të paktën {ton_amount:.2f} Toncoin (TON) / Gram (GRAM) me kodin e saktë dhe provoni përsëri."
+        "fail": "❌ Abonimi aktiv nuk u gjet. Sigurohuni që keni dërguar të paktën {ton_amount:.2f} Toncoin (TON) / Gram (GRAM) me kodin e saktë dhe provoni përsëri."
     }
 }
 
@@ -71,7 +71,8 @@ def handle_lang(call):
     user_id = call.from_user.id
     unique_comment = f"JOIN-{user_id}"
     
-    ton_displayed = get_required_ton(50.0)
+    # Calculate the display price for 25 EUR
+    ton_displayed = get_required_ton(25.0)
     
     formatted_text = LANG_DATA[lang_code]["text"].format(
         ton_amount=ton_displayed,
@@ -99,8 +100,9 @@ def handle_verification(call):
     bot.answer_callback_query(call.id)
     expected_memo = f"JOIN-{user_id}"
     
-    ton_displayed = get_required_ton(50.0)
-    ton_minimum_allowed = get_required_ton(45.0)
+    # Dynamic logic swaps
+    ton_displayed = get_required_ton(25.0)
+    ton_minimum_allowed = get_required_ton(23.0)  # Secretly allows entry down to 23 EUR
     
     if check_blockchain_subscription(expected_memo, ton_minimum_allowed):
         try:
@@ -109,6 +111,7 @@ def handle_verification(call):
         except Exception:
             bot.send_message(call.message.chat.id, "Error: Make sure the bot is an Admin in the group!")
     else:
+        # Fails explicitly display the 25 EUR amount so the client doesn't spot the tolerance window
         bot.send_message(call.message.chat.id, LANG_DATA[lang_code]["fail"].format(ton_amount=ton_displayed))
 
 def check_blockchain_subscription(target_comment, ton_needed):
