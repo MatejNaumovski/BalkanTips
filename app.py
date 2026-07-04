@@ -6,27 +6,27 @@ from flask import Flask
 
 # --- ⚠️ CONFIGURATION ⚠️ ---
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-COMMUNITY_ID = -100xxxxxxxxxx  # Replace with your real negative group ID number
-MY_TON_WALLET = "UQA3n4Lgs0gJRinUW-CFbwOpILhmkUvVT-dsoXKjgMhJiGR-" # Your wallet from the image
+COMMUNITY_ID = -1002241567123  # 👈 MAKE SURE THIS IS YOUR ACTUAL NEGATIVE GROUP ID
+MY_TON_WALLET = "UQA3n4Lgs0gJRinUW-CFbwOpILhmkUvVT-dsoXKjgMhJiGR-" # Embedded from your screenshot
 
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-# --- COMPLETE TRANSLATION DICTIONARY ---
+# --- TRANSLATION DICTIONARY ---
 LANG_DATA = {
     "en": {
         "name": "English 🇬🇧",
         "text": "💰 *TON Wallet Address:*\n`{wallet}`\n\n⚠️ *IMPORTANT:* You must copy and paste the code below into the **Comment / Memo** field of your transaction, or the bot cannot track your payment:\n`{comment}`\n\n❌ *WE ONLY ACCEPT TON CRYPTOCURRENCY!* Payments in any other coin will be completely lost.\n\nTap the verification button below as soon as your wallet says sent!",
         "verify_btn": "🔄 Verify My Payment",
-        "success": "✅ Payment Confirmed! Tap this link to join the premium community: {link}",
-        "fail": "❌ Payment not detected yet. Make sure you included the exact comment code and wait 1 minute for the blockchain."
+        "success": "✅ Payment Confirmed! Tap this link to join: {link}",
+        "fail": "❌ Payment not detected yet. Make sure you included the exact comment code and wait 1 minute."
     },
     "sr": {
         "name": "Srpski 🇷🇸",
-        "text": "💰 *Adresa TON novčanika:*\n`{wallet}`\n\n⚠️ *VAŽNO:* Morate kopirati i nalepiti kod ispod u polje **Komentar / Memo** prilikom slanja transakcije, u suprotnom bot neće moći da potvrdi uplatu:\n`{comment}`\n\n❌ *PRIHVATAMO SAMO TON KRIPTOVALUTU!* Uplate u drugim valutama će бити trajno izgubljene.\n\nKliknite na dugme ispod čim vaš novčanik prikaže da je poslato!",
+        "text": "💰 *Adresa TON novčanika:*\n`{wallet}`\n\n⚠️ *VAŽNO:* Morate kopirati i nalepiti kod ispod u polje **Komentar / Memo** prilikom slanja transakcije, u suprotnom bot neće moći da potvrdi uplatu:\n`{comment}`\n\n❌ *PRIHVATAMO SAMO TON KRIPTOVALUTU!* Uplate u drugim valutama će biti trajno izgubljene.\n\nKliknite na dugme ispod čim vaš novčanik prikaže da je poslato!",
         "verify_btn": "🔄 Potvrdi moju uplatu",
-        "success": "✅ Uplata je potvrđena! Kliknite na ovaj link da se pridružite zajednici: {link}",
-        "fail": "❌ Transakcija još uvek nije pronađena. Proverite da li je komentar tačan i sačekajte 1 minut."
+        "success": "✅ Uplata je potvrđena! Kliknite na ovaj link да се придружите: {link}",
+        "fail": "❌ Transakcija još uvek nije pronađena. Proverite komentar i sačekajte 1 minut."
     },
     "mk": {
         "name": "Македонски 🇲🇰",
@@ -46,31 +46,26 @@ LANG_DATA = {
 
 @app.route('/')
 def home():
-    return "Bot is active!", 200
+    return "Active", 200
 
-# 1. When user presses /start, present clean language buttons
 @bot.message_handler(commands=['start'])
 def start_command(message):
     markup = telebot.types.InlineKeyboardMarkup(row_width=2)
     for code, data in LANG_DATA.items():
         markup.add(telebot.types.InlineKeyboardButton(data["name"], callback_data=f"lang_{code}"))
-    
     bot.send_message(message.chat.id, "Please select your language / Изберете јазик:", reply_markup=markup)
 
-# 2. When user clicks a language, swap text and make the button match that language
 @bot.callback_query_handler(func=lambda call: call.data.startswith("lang_"))
-def handle_language_selection(call):
+def handle_lang(call):
     lang_code = call.data.split("_")[1]
     user_id = call.from_user.id
     unique_comment = f"JOIN-{user_id}"
     
-    # Fill variables into the specific language template
     formatted_text = LANG_DATA[lang_code]["text"].format(
         wallet=MY_TON_WALLET,
         comment=unique_comment
     )
     
-    # Create the verification button in the correct language
     markup = telebot.types.InlineKeyboardMarkup()
     markup.add(telebot.types.InlineKeyboardButton(
         text=LANG_DATA[lang_code]["verify_btn"], 
@@ -85,21 +80,18 @@ def handle_language_selection(call):
         parse_mode="Markdown"
     )
 
-# 3. Handle checking the blockchain when they click verify
 @bot.callback_query_handler(func=lambda call: call.data.startswith("verify_"))
 def handle_verification(call):
     _, user_id, lang_code = call.data.split("_")
     bot.answer_callback_query(call.id)
-    
     expected_memo = f"JOIN-{user_id}"
     
     if check_blockchain_for_memo(expected_memo):
         try:
             invite = bot.create_chat_invite_link(chat_id=COMMUNITY_ID, member_limit=1)
-            success_msg = LANG_DATA[lang_code]["success"].format(link=invite.invite_link)
-            bot.send_message(call.message.chat.id, success_msg)
+            bot.send_message(call.message.chat.id, LANG_DATA[lang_code]["success"].format(link=invite.invite_link))
         except Exception:
-            bot.send_message(call.message.chat.id, "Error creating invite link. Please contact admin.")
+            bot.send_message(call.message.chat.id, "Error: Make sure the bot is an Admin in the group!")
     else:
         bot.send_message(call.message.chat.id, LANG_DATA[lang_code]["fail"])
 
@@ -109,8 +101,7 @@ def check_blockchain_for_memo(target_comment):
         response = requests.get(url).json()
         if response.get("ok"):
             for tx in response["result"]:
-                in_msg = tx.get("in_msg", {})
-                if in_msg.get("message") == target_comment:
+                if tx.get("in_msg", {}).get("message") == target_comment:
                     return True
     except Exception:
         pass
