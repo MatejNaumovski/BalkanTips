@@ -1,83 +1,50 @@
 import telebot
 import requests
-import threading
 import os
+import threading
 from flask import Flask
 
-# --- ⚠️ CONFIGURATION ⚠️ ---
+# --- CONFIGURATION ---
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-COMMUNITY_ID = -100203997550617
-MY_TON_WALLET = "UQA3n4Lgs0gJRinUW-CFbwOpILhmkUvVT-dsoXKjgMhJiGR-"
+COMMUNITY_ID = -100xxxxxxxxxx # Put your Group ID here
+MY_TON_WALLET = "YOUR_WALLET_ADDRESS" 
 
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-# 🌐 This dummy webpage tricks Render into keeping your app active
-@app.route('/')
-def home():
-    return "Bot status: Running smoothly!", 200
+# Dictionary for language content
+LANGS = {
+    "en": {"btn": "English 🇬🇧", "msg": "Send payment to this wallet using TON only: "},
+    "sr": {"btn": "Srpski 🇷🇸", "msg": "Pošaljite uplatu na ovaj novčanik koristeći samo TON: "},
+    "mk": {"btn": "Македонски 🇲🇰", "msg": "Испратете уплата на овој паричник користејќи исклучиво TON: "},
+    "sq": {"btn": "Shqip 🇦🇱", "msg": "Dërgoni pagesën në këtë portofol duke përdorur vetëm TON: "}
+}
 
 @bot.message_handler(commands=['start'])
-def welcome_user(message):
-    user_id = message.from_user.id
-    unique_comment = f"JOIN-{user_id}"
-    
-    payment_instructions = (
-        f"👋 *Welcome!*\n\n"
-        f"To join the private community, send your payment directly to my wallet:\n\n"
-        f"💰 *Wallet Address:* \n`{MY_TON_WALLET}`\n\n"
-        f"⚠️ *IMPORTANT:* You must copy and paste the code below into the **Comment / Memo** field of your transaction, otherwise the bot cannot track your payment:\n"
-        f"`{unique_comment}`\n\n"
-        f"Tap the verification button below as soon as your wallet says sent!"
-
-        f"👋 *Dobrodošli!*\n\n" 
-        f"Da biste se pridružili privatnoj zajednici, pošaljite uplatu koristeći **Toncoin (TON)** kriptovalutu direktno na moj TON novčanik:\n\n" 
-        f"💰 *Adresa TON novčanika:*\n`{MY_TON_WALLET}`\n\n" 
-        f"⚠️ *VAŽNO:* Prilikom slanja transakcije obavezno kopirajte i nalepite kod ispod u polje **Komentar / Memo**, u suprotnom bot neće moći da prepozna i potvrdi vašu uplatu:\n" 
-        f"`{unique_comment}`\n\n" 
-        f"✅ Kada vaš TON novčanik prikaže da je transakcija uspešno poslata, pritisnite dugme za verifikaciju ispod!"
-    )
-    
+def start(message):
     markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(telebot.types.InlineKeyboardButton(text="🔄 Verify My Payment", callback_data=f"verify_{user_id}"))
-    bot.send_message(message.chat.id, payment_instructions, parse_mode="Markdown", reply_markup=markup)
+    for code, data in LANGS.items():
+        markup.add(telebot.types.InlineKeyboardButton(text=data["btn"], callback_data=f"lang_{code}"))
+    bot.send_message(message.chat.id, "Please select your language / Ве молиме изберете јазик:", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("verify_"))
-def process_verification(call):
-    user_id = call.data.split("_")[1]
-    bot.answer_callback_query(call.id, "Scanning blockchain ledger...")
-    
-    expected_memo = f"JOIN-{user_id}"
-    
-    if check_blockchain_for_memo(expected_memo):
-        try:
-            invite = bot.create_chat_invite_link(chat_id=COMMUNITY_ID, member_limit=1)
-            bot.send_message(call.message.chat.id, f"✅ Payout Confirmed! Tap this link to join: {invite.invite_link}")
-        except Exception as e:
-            bot.send_message(call.message.chat.id, "❌ Paid, but link generation failed. Message the owner.")
-    else:
-        bot.send_message(call.message.chat.id, "❌ Payout not detected yet. Make sure you included the exact text comment and wait 1 minute for the network to process.")
+@bot.callback_query_handler(func=lambda call: True)
+def callback_query(call):
+    if call.data.startswith("lang_"):
+        lang = call.data.split("_")[1]
+        user_id = call.from_user.id
+        unique_comment = f"JOIN-{user_id}"
+        
+        text = (f"{LANGS[lang]['msg']}\n\n`{MY_TON_WALLET}`\n\n"
+                f"Memo/Comment: `{unique_comment}`\n\n"
+                "⚠️ Only TON is accepted. Payments in other currencies will be lost.")
+        
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(telebot.types.InlineKeyboardButton(text="Verify Payment", callback_data=f"verify_{user_id}"))
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, 
+                              text=text, reply_markup=markup, parse_mode="Markdown")
 
-def check_blockchain_for_memo(target_comment):
-    url = f"https://toncenter.com/api/v2/getTransactions?address={MY_TON_WALLET}&limit=20"
-    try:
-        response = requests.get(url).json()
-        if response.get("ok"):
-            for tx in response["result"]:
-                in_msg = tx.get("in_msg", {})
-                message_text = in_msg.get("message", "")
-                if message_text == target_comment:
-                    return True
-    except Exception as e:
-        pass
-    return False
+    elif call.data.startswith("verify_"):
+        # Keep your existing verification logic here (the check_blockchain_for_memo function)
+        pass 
 
-# Runs the Telegram listener in a background thread
-def run_bot():
-    bot.infinity_polling()
-
-threading.Thread(target=run_bot, daemon=True).start()
-
-# Flask requires an entry point for production servers on Render
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+# Keep the rest of your logic (check_blockchain_for_memo, run_bot, flask)
