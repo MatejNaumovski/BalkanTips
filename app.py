@@ -1,10 +1,11 @@
 import telebot
 import requests
 import threading
+import os
 from flask import Flask
 
 # --- ⚠️ CONFIGURATION ⚠️ ---
-BOT_TOKEN = "8986765947:AAGh0BjhM1YgIhncIb1jZjGIE13ivRmPwmo"
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 COMMUNITY_ID = -100203997550617
 MY_TON_WALLET = "UQA3n4Lgs0gJRinUW-CFbwOpILhmkUvVT-dsoXKjgMhJiGR-"
 
