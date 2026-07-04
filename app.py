@@ -12,39 +12,40 @@ MY_TON_WALLET = "YOUR_WALLET_ADDRESS"
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-# Dictionary for language content
-LANGS = {
-    "en": {"btn": "English 🇬🇧", "msg": "Send payment to this wallet using TON only: "},
-    "sr": {"btn": "Srpski 🇷🇸", "msg": "Pošaljite uplatu na ovaj novčanik koristeći samo TON: "},
-    "mk": {"btn": "Македонски 🇲🇰", "msg": "Испратете уплата на овој паричник користејќи исклучиво TON: "},
-    "sq": {"btn": "Shqip 🇦🇱", "msg": "Dërgoni pagesën në këtë portofol duke përdorur vetëm TON: "}
+# --- LANGUAGE DATA ---
+# Simple dictionary for your translations
+LANG_DATA = {
+    "en": {"name": "English 🇬🇧", "text": "Send payment to this wallet using TON only: "},
+    "sr": {"name": "Srpski 🇷🇸", "text": "Pošaljite uplatu na ovaj novčanik koristeći samo TON: "},
+    "mk": {"name": "Македонски 🇲🇰", "text": "Испратете уплата на овој паричник користејќи исклучиво TON: "},
+    "sq": {"name": "Shqip 🇦🇱", "text": "Dërgoni pagesën në këtë portofol duke përdorur vetëm TON: "}
 }
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    markup = telebot.types.InlineKeyboardMarkup()
-    for code, data in LANGS.items():
-        markup.add(telebot.types.InlineKeyboardButton(text=data["btn"], callback_data=f"lang_{code}"))
-    bot.send_message(message.chat.id, "Please select your language / Ве молиме изберете јазик:", reply_markup=markup)
+    markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+    # Create buttons for each language
+    for code, data in LANG_DATA.items():
+        button = telebot.types.InlineKeyboardButton(data["name"], callback_data=f"lang_{code}")
+        markup.add(button)
+    
+    bot.send_message(message.chat.id, "Select your language / Изберете јазик:", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: True)
-def callback_query(call):
-    if call.data.startswith("lang_"):
-        lang = call.data.split("_")[1]
-        user_id = call.from_user.id
-        unique_comment = f"JOIN-{user_id}"
-        
-        text = (f"{LANGS[lang]['msg']}\n\n`{MY_TON_WALLET}`\n\n"
-                f"Memo/Comment: `{unique_comment}`\n\n"
-                "⚠️ Only TON is accepted. Payments in other currencies will be lost.")
-        
-        markup = telebot.types.InlineKeyboardMarkup()
-        markup.add(telebot.types.InlineKeyboardButton(text="Verify Payment", callback_data=f"verify_{user_id}"))
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, 
-                              text=text, reply_markup=markup, parse_mode="Markdown")
+@bot.callback_query_handler(func=lambda call: call.data.startswith("lang_"))
+def set_lang(call):
+    lang_code = call.data.split("_")[1]
+    user_id = call.from_user.id
+    unique_comment = f"JOIN-{user_id}"
+    
+    # The message the user gets after picking a language
+    reply_text = (f"{LANG_DATA[lang_code]['text']}\n\n"
+                  f"Address: `{MY_TON_WALLET}`\n\n"
+                  f"Comment: `{unique_comment}`\n\n"
+                  "⚠️ ONLY TON IS ACCEPTED.")
+    
+    # Send the final payment instructions
+    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, 
+                          text=reply_text, parse_mode="Markdown")
 
-    elif call.data.startswith("verify_"):
-        # Keep your existing verification logic here (the check_blockchain_for_memo function)
-        pass 
-
-# Keep the rest of your logic (check_blockchain_for_memo, run_bot, flask)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
