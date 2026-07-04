@@ -7,7 +7,7 @@ from flask import Flask
 
 # --- ⚠️ CONFIGURATION ⚠️ ---
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-COMMUNITY_ID = -1002241567123  # 👈 Make sure this is your actual negative group ID
+COMMUNITY_ID = -1003997550617  # 👈 Make sure this is your actual negative group ID
 MY_TON_WALLET = "UQA3n4Lgs0gJRinUW-CFbwOpILhmkUvVT-dsoXKjgMhJiGR-"
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -32,7 +32,7 @@ LANG_DATA = {
     "mk": {
         "name": "Македонски 🇲🇰",
         "text": "💰 *Месечна претплата: 50 EUR*\n\n*Точен износ за испраќање сега:* `{ton_amount:.2f} TON`\n\n*Адреса на TON паричник:*\n`{wallet}`\n\n⚠️ *ВАЖНО:* Мора да го копирате и залепите кодот подолу во полето **Коментар / Memo** при плаќањето, во спротивно ботот нема да ја препознае уплатата:\n`{comment}`\n\n❌ *ПРИФАЌАМЕ ИСКЛУЧИВО TON* (Уплатите во други валути ќе бидат трајно изгубени).\n\nПритиснете го копчето подолу штом вашиот паричник покаже дека е испратено!",
-        "verify_btn": "🔄 Потврди ја мојата претплата",
+        "verify_btn": "🔄 Потвpди ја мојата претплата",
         "success": "✅ Претплата е потврдена! Кликнете на овој линк за да се приклучите: {link}",
         "fail": "❌ Активна уплата не е пронајдена. Проверете дали сте испратиле најмалку {ton_amount:.2f} TON со точниот коментар и обидете се повторно."
     },
@@ -47,13 +47,13 @@ LANG_DATA = {
 
 def get_required_ton():
     try:
-        # Get live conversion rate for €50
-        url = "https://min-api.cryptocompare.com/data/price?fsym=TON&tsyms=EUR"
+        # Pull live pricing securely via CoinGecko open endpoint
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=eur"
         res = requests.get(url).json()
-        ton_price = res.get("EUR", 5.50)
-        return 50.0 / ton_price
+        ton_price = res["the-open-network"]["eur"]
+        return round(50.0 / ton_price, 2)
     except Exception:
-        return 9.50  # Balanced fallback if API fails
+        return 34.00  # Smart market fallback value if api returns an unexpected structure
 
 @app.route('/')
 def home():
