@@ -32,28 +32,28 @@ LANG_DATA = {
     "mk": {
         "name": "Македонски 🇲🇰",
         "text": "💰 *Месечна претплата: 50 EUR*\n\n*Точен износ за испраќање сега:* `{ton_amount:.2f} TON`\n\n*Адреса на TON паричник:*\n`{wallet}`\n\n⚠️ *ВАЖНО:* Мора да го копирате и залепите кодот подолу во полето **Коментар / Memo** при плаќањето, во спротивно ботот нема да ја препознае уплатата:\n`{comment}`\n\n❌ *ПРИФАЌАМЕ ИСКЛУЧИВО TON* (Уплатите во други валути ќе бидат трајно изгубени).\n\nПритиснете го копчето подолу штом вашиот паричник покаже дека е испратено!",
-        "verify_btn": "🔄 Потвpди ја мојата претплата",
+        "verify_btn": "🔄 Потврди ја мојата претплата",
         "success": "✅ Претплата е потврдена! Кликнете на овој линк за да се приклучите: {link}",
         "fail": "❌ Активна уплата не е пронајдена. Проверете дали сте испратиле најмалку {ton_amount:.2f} TON со точниот коментар и обидете се повторно."
     },
     "sq": {
         "name": "Shqip 🇦🇱",
-        "text": "💰 *Abonimi Mujor: 50 EUR*\n\n*Shuma e saktë për të dërguar tani:* `{ton_amount:.2f} TON`\n\n*Adresa e Portofolit TON:*\n`{wallet}`\n\n⚠️ *E RËNDËSISHME:* Duhet të kopjoni dhe ngjitni kodin e mëposhtëm në fushën **Comment / Memo** të transaksionit tuaj, përndryshe boti nuk mund ta gjurmojë pagesën:\n`{comment}`\n\n❌ *PRANOJMË VETËM TON* (Pagesat në monedha të tjera do të humbasin).\n\nShtypni butonin e mëposhtëm sapo portofoli juaj të thotë u dërgua!",
+        "text": "💰 *Abonimi Mujor: 50 EUR*\n\n*Shuma e saktë për të dërguar tani:* `{ton_amount:.2f} TON`\n\n*Adresa e Portofolit TON:*\n`{wallet}`\n\n⚠️ *E RËNDËСÏSHME:* Duhet të kopjoni dhe ngjitni kodin e mëposhtëm në fushën **Comment / Memo** të transaksionit tuaj, përndryshe boti nuk mund ta gjurmojë pagesën:\n`{comment}`\n\n❌ *PRANOJMË VETËM TON* (Pagesat në monedha të tjera do të humbasin).\n\nShtypni butonin e mëposhtëm sapo portofoli juaj të thotë u dërgua!",
         "verify_btn": "🔄 Verifiko Abonimin Tim",
         "success": "✅ Abonimi u konfirmua! Klikoni këtë link për t'u bashkuar: {link}",
         "fail": "❌ Abonimi aktiv nuk u gjet. Sigurohuni që keni dërguar të paktën {ton_amount:.2f} TON me kodin e saktë dhe provoni përsëri."
     }
 }
 
-def get_required_ton():
+def get_required_ton(eur_amount):
     try:
-        # Pull live pricing securely via CoinGecko open endpoint
         url = "https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=eur"
         res = requests.get(url).json()
         ton_price = res["the-open-network"]["eur"]
-        return round(50.0 / ton_price, 2)
+        return round(eur_amount / ton_price, 2)
     except Exception:
-        return 34.00  # Smart market fallback value if api returns an unexpected structure
+        # Fallback calculation if the API endpoint times out
+        return round(eur_amount / 1.47, 2)
 
 @app.route('/')
 def home():
@@ -71,10 +71,12 @@ def handle_lang(call):
     lang_code = call.data.split("_")[1]
     user_id = call.from_user.id
     unique_comment = f"JOIN-{user_id}"
-    ton_needed = get_required_ton()
+    
+    # Display the full 50 EUR price to the user
+    ton_displayed = get_required_ton(50.0)
     
     formatted_text = LANG_DATA[lang_code]["text"].format(
-        ton_amount=ton_needed,
+        ton_amount=ton_displayed,
         wallet=MY_TON_WALLET,
         comment=unique_comment
     )
@@ -98,17 +100,20 @@ def handle_verification(call):
     _, user_id, lang_code = call.data.split("_")
     bot.answer_callback_query(call.id)
     expected_memo = f"JOIN-{user_id}"
-    ton_needed = get_required_ton()
     
-    if check_blockchain_subscription(expected_memo, ton_needed):
+    # Calculate values
+    ton_displayed = get_required_ton(50.0)
+    ton_minimum_allowed = get_required_ton(45.0)  # Secrets out! Validates down to €45
+    
+    if check_blockchain_subscription(expected_memo, ton_minimum_allowed):
         try:
-            # Generate single-use invite link valid for 1 person
             invite = bot.create_chat_invite_link(chat_id=COMMUNITY_ID, member_limit=1)
             bot.send_message(call.message.chat.id, LANG_DATA[lang_code]["success"].format(link=invite.invite_link))
         except Exception:
             bot.send_message(call.message.chat.id, "Error: Make sure the bot is an Admin in the group!")
     else:
-        bot.send_message(call.message.chat.id, LANG_DATA[lang_code]["fail"].format(ton_amount=ton_needed))
+        # If it fails, display the 50 EUR text so they think they missed the mark
+        bot.send_message(call.message.chat.id, LANG_DATA[lang_code]["fail"].format(ton_amount=ton_displayed))
 
 def check_blockchain_subscription(target_comment, ton_needed):
     required_nanotons = int(ton_needed * 1_000_000_000)
@@ -122,7 +127,6 @@ def check_blockchain_subscription(target_comment, ton_needed):
                     value_nanotons = int(tx.get("in_msg", {}).get("value", "0"))
                     tx_time = int(tx.get("utime", 0))
                     
-                    # Must be enough crypto AND less than 30 days old (2,592,000 seconds)
                     if value_nanotons >= required_nanotons and (current_time - tx_time) < 2592000:
                         return True
     except Exception:
