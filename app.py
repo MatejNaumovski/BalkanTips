@@ -29,6 +29,13 @@ def welcome_user(message):
         f"⚠️ *IMPORTANT:* You must copy and paste the code below into the **Comment / Memo** field of your transaction, otherwise the bot cannot track your payment:\n"
         f"`{unique_comment}`\n\n"
         f"Tap the verification button below as soon as your wallet says sent!"
+
+        f"👋 *Dobrodošli!*\n\n" 
+        f"Da biste se pridružili privatnoj zajednici, pošaljite uplatu koristeći **Toncoin (TON)** kriptovalutu direktno na moj TON novčanik:\n\n" 
+        f"💰 *Adresa TON novčanika:*\n`{MY_TON_WALLET}`\n\n" 
+        f"⚠️ *VAŽNO:* Prilikom slanja transakcije obavezno kopirajte i nalepite kod ispod u polje **Komentar / Memo**, u suprotnom bot neće moći da prepozna i potvrdi vašu uplatu:\n" 
+        f"`{unique_comment}`\n\n" 
+        f"✅ Kada vaš TON novčanik prikaže da je transakcija uspešno poslata, pritisnite dugme za verifikaciju ispod!"
     )
     
     markup = telebot.types.InlineKeyboardMarkup()
